@@ -10,9 +10,9 @@ import (
 )
 
 type Repository struct {
-	root   string
-	path   string
-	config *ini.File
+	Root   string
+	Path   string
+	Config *ini.File
 }
 
 func InitRepository(path string) (*Repository, error) {
@@ -83,7 +83,7 @@ func FindRepository(path string) (*Repository, error) {
 func (r *Repository) initConfig() error {
 	var configFile *ini.File
 
-	err := os.Mkdir(r.path, 0777)
+	err := os.Mkdir(r.Path, 0777)
 
 	if err != nil {
 		return err
@@ -111,13 +111,13 @@ func (r *Repository) initConfig() error {
 		return err
 	}
 
-	err = configFile.SaveTo(r.path + "/config")
+	err = configFile.SaveTo(r.Path + "/config")
 
 	if err != nil {
 		return err
 	}
 
-	r.config = configFile
+	r.Config = configFile
 
 	return err
 }
@@ -127,7 +127,7 @@ func (r *Repository) initRequiredDirs() error {
 	var err error
 
 	for _, dir := range dirs {
-		err = os.MkdirAll(r.path+dir, 0777)
+		err = os.MkdirAll(r.Path+dir, 0777)
 		if err != nil {
 			break
 		}
@@ -137,24 +137,26 @@ func (r *Repository) initRequiredDirs() error {
 }
 
 func (r *Repository) initRequiredFiles() error {
-	file, err := os.Create(r.path + "/description")
-	defer file.Close()
+	file, err := os.Create(r.Path + "/description")
 
 	if err != nil {
 		return err
 	}
+
+	defer file.Close()
 
 	_, err = file.Write([]byte("Unnamed repository; edit this file 'description' to name the repository.\n"))
 
 	if err != nil {
 		return err
 	}
-	file, err = os.Create(r.path + "/HEAD")
-	defer file.Close()
+	file, err = os.Create(r.Path + "/HEAD")
 
 	if err != nil {
 		return err
 	}
+
+	defer file.Close()
 
 	_, err = file.Write([]byte("ref: refs/heads/master\n"))
 
