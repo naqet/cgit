@@ -20,4 +20,5 @@ type Command struct {
 var Commands = map[string]Processible{
 	"init":     &initCmd,
 	"cat-file": &catFileCmd,
+	"hash-object": &hashObjectCmd,
 }
