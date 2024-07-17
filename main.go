@@ -9,6 +9,7 @@ import (
 func main() {
     args := cargs.InitArgs()
     args.AddCommand(commands.HelpCmd{})
+    args.AddCommand(commands.InitCmd{})
 
     cmd, err := args.Process()
 
