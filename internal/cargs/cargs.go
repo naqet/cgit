@@ -29,14 +29,12 @@ func (a *Args) Process() (Command, error) {
 		if cmd, ok := a.Commands["help"]; ok {
 			return cmd, nil
 		}
-		// TODO: print help command
 		return nil, fmt.Errorf("Invalid command")
 	}
 
+	cmdName := args[0]
 
-	input := args[0]
-
-	cmd, ok := a.Commands[input]
+	cmd, ok := a.Commands[cmdName]
 
 	if !ok {
 		return nil, fmt.Errorf("Invalid command")
