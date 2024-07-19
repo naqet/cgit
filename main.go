@@ -10,6 +10,7 @@ func main() {
     args := cargs.InitArgs()
     args.AddCommand(commands.HelpCmd{})
     args.AddCommand(commands.InitCmd{})
+    args.AddCommand(commands.HashObjectCmd{})
 
     cmd, err := args.Process()
 

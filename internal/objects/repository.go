@@ -1,9 +1,12 @@
 package objects
 
 import (
+	"bufio"
+	"compress/zlib"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"gopkg.in/ini.v1"
 )
@@ -17,7 +20,8 @@ type Repository struct {
 const mode = 0777
 
 func InitRepository(path string) (*Repository, error) {
-	_, err := os.ReadDir(fmt.Sprintf("%s/.cgit", path))
+    gitDirPath := filepath.Join(path, ".cgit")
+	_, err := os.ReadDir(gitDirPath)
 
 	if err == nil {
 		// TODO: allow force reinit
@@ -28,7 +32,7 @@ func InitRepository(path string) (*Repository, error) {
 
 	repo := &Repository{
 		Worktree: path,
-		Gitdir:   filepath.Join(path, ".cgit"),
+		Gitdir:   gitDirPath,
 	}
 
 	err = os.MkdirAll(repo.GetPath("branches"), mode)
@@ -69,20 +73,140 @@ func InitRepository(path string) (*Repository, error) {
 		return nil, err
 	}
 
-    config, err := getDefaultConfig()
+	config, err := getDefaultConfig()
 
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
-    file, err := os.Create(repo.GetPath("config"))
+	file, err := os.Create(repo.GetPath("config"))
 
-    if err != nil {
-        return nil, err
-    }
-    _, err = config.WriteTo(file)
+	if err != nil {
+		return nil, err
+	}
+
+	defer file.Close()
+	_, err = config.WriteTo(file)
 
 	return repo, err
+}
+
+func GetRepository(path string) (*Repository, error) {
+    gitDirPath := filepath.Join(path, ".cgit")
+	_, err := os.ReadDir(gitDirPath)
+
+	if os.IsNotExist(err) {
+        return nil, fmt.Errorf("Invalid path")
+    } else if err != nil {
+        return nil, err
+    }
+
+	repo := &Repository{
+		Worktree: path,
+		Gitdir:   gitDirPath,
+	}
+
+    config, err := ini.Load(repo.GetPath("config"))
+
+    if err != nil {
+        return nil, fmt.Errorf("Invalid config file: %s", err)
+    }
+
+    repo.Conf = config
+
+    return repo, nil
+}
+
+func FindRepository(args ...string) (*Repository, error) {
+    path := "."
+
+    if len(args) == 1 {
+        path = args[0]
+    }
+    _, err := os.Stat(filepath.Join(path, ".cgit"))
+
+    if err == nil {
+        return GetRepository(path)
+    }
+
+    parentPath := filepath.Join(path, "..")
+
+    // Base case "/" path
+    if parentPath == path {
+        return nil, fmt.Errorf("No .cgit dir")
+    }
+
+    return FindRepository(parentPath)
+}
+
+func (r *Repository) ReadObject(sha []byte) (interface{}, error) {
+	if len(sha) < 2 {
+		return nil, fmt.Errorf("Invalid object hash")
+	}
+
+	path := r.GetPath(string(sha[0:2]), string(sha[2:]))
+
+	file, err := os.Open(path)
+
+	if os.IsNotExist(err) {
+		return nil, fmt.Errorf("Invalid object hash")
+	} else if err != nil {
+		return nil, err
+	}
+
+	defer file.Close()
+	rd, err := zlib.NewReader(file)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rd.Close()
+
+	read := bufio.NewReader(rd)
+
+	objType, err := read.ReadBytes(' ')
+
+	if err != nil {
+		return nil, err
+	}
+
+	sizeBytes, err := read.ReadBytes('\x00')
+
+	if err != nil {
+		return nil, err
+	}
+
+	size, err := strconv.Atoi(string(sizeBytes))
+
+	if err != nil {
+		return nil, err
+	}
+	content := []byte{}
+
+	_, err = read.Read(content)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if size != len(content) {
+		return nil, fmt.Errorf("Malformed object: bad length")
+	}
+
+	var obj Object
+
+	switch string(objType) {
+	case "blob":
+		obj = &Blob{}
+	//case "commit":
+	//	obj = Blob{}
+	//case "tag":
+	//	obj = Blob{}
+	//case "tree":
+	//	obj = Blob{}
+	}
+
+	return obj, nil
 }
 
 func (r *Repository) GetPath(paths ...string) string {
@@ -90,28 +214,28 @@ func (r *Repository) GetPath(paths ...string) string {
 }
 
 func getDefaultConfig() (file *ini.File, err error) {
-    file = ini.Empty()
+	file = ini.Empty()
 
-    section, err := file.NewSection("core")
+	section, err := file.NewSection("core")
 
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
-    _, err = section.NewKey("repositoryformatversion", "0")
-    if err != nil {
-        return nil, err
-    }
+	_, err = section.NewKey("repositoryformatversion", "0")
+	if err != nil {
+		return nil, err
+	}
 
-    _, err = section.NewKey("filemode", "false")
-    if err != nil {
-        return nil, err
-    }
+	_, err = section.NewKey("filemode", "false")
+	if err != nil {
+		return nil, err
+	}
 
-    _, err = section.NewKey("bare", "false")
-    if err != nil {
-        return nil, err
-    }
+	_, err = section.NewKey("bare", "false")
+	if err != nil {
+		return nil, err
+	}
 
-    return file, nil
+	return file, nil
 }
