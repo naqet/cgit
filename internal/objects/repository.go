@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"compress/zlib"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -139,12 +140,12 @@ func FindRepository(args ...string) (*Repository, error) {
     return FindRepository(parentPath)
 }
 
-func (r *Repository) ReadObject(sha []byte) (interface{}, error) {
+func (r *Repository) ReadObject(sha []byte) (Object, error) {
 	if len(sha) < 2 {
 		return nil, fmt.Errorf("Invalid object hash")
 	}
 
-	path := r.GetPath(string(sha[0:2]), string(sha[2:]))
+	path := r.GetPath("objects", string(sha[0:2]), string(sha[2:]))
 
 	file, err := os.Open(path)
 
@@ -176,28 +177,27 @@ func (r *Repository) ReadObject(sha []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	size, err := strconv.Atoi(string(sizeBytes))
-
-	if err != nil {
-		return nil, err
-	}
-	content := []byte{}
-
-	_, err = read.Read(content)
+    size, err := strconv.Atoi(string(sizeBytes[:len(sizeBytes)-1]))
 
 	if err != nil {
 		return nil, err
 	}
 
-	if size != len(content) {
+    data, err := io.ReadAll(read)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if size != len(data) {
 		return nil, fmt.Errorf("Malformed object: bad length")
 	}
 
 	var obj Object
 
-	switch string(objType) {
+    switch string(objType[:len(objType)-1]) {
 	case "blob":
-		obj = &Blob{}
+        obj = &Blob{Data: data}
 	//case "commit":
 	//	obj = Blob{}
 	//case "tag":

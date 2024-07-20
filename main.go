@@ -11,6 +11,7 @@ func main() {
     args.AddCommand(commands.HelpCmd{})
     args.AddCommand(commands.InitCmd{})
     args.AddCommand(commands.HashObjectCmd{})
+    args.AddCommand(commands.CatFileCmd{})
 
     cmd, err := args.Process()
 
