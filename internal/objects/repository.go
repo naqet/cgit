@@ -202,8 +202,9 @@ func (r *Repository) ReadObject(sha []byte) (Object, error) {
 	//	obj = Blob{}
 	//case "tag":
 	//	obj = Blob{}
-	//case "tree":
-	//	obj = Blob{}
+	case "tree":
+		obj = &Tree{}
+        obj.Deserialize(data)
 	}
 
 	return obj, nil
