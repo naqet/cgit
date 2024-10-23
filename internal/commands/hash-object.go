@@ -15,7 +15,7 @@ func (c HashObjectCmd) Name() string {
 }
 
 func (c HashObjectCmd) Help() string {
-	return "This is test message"
+	return "This is help message for hash object"
 }
 
 func (c HashObjectCmd) Process(args *cargs.Args) error {

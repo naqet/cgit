@@ -12,7 +12,7 @@ func (c HelpCmd) Name() string {
 }
 
 func (c HelpCmd) Help() string {
-	return "This is test message"
+	return "This is help message"
 }
 
 func (c HelpCmd) Process(_ *cargs.Args) error {

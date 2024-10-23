@@ -12,6 +12,8 @@ func main() {
     args.AddCommand(commands.InitCmd{})
     args.AddCommand(commands.HashObjectCmd{})
     args.AddCommand(commands.CatFileCmd{})
+    // TODO: after implementing commits
+    //args.AddCommand(commands.LogCmd{})
 
     cmd, err := args.Process()
 
