@@ -13,6 +13,7 @@ func main() {
     args.AddCommand(commands.HashObjectCmd{})
     args.AddCommand(commands.CatFileCmd{})
     args.AddCommand(commands.LsTreeCmd{})
+    args.AddCommand(commands.CheckoutCmd{})
     // TODO: after implementing commits
     //args.AddCommand(commands.LogCmd{})
 
